@@ -47,6 +47,7 @@ class TrackingService : Service(), SensorEventListener {
     private var currentAzimuthRad: Float = 0f
     private var slowAzimuthX: Float = 0f
     private var slowAzimuthY: Float = 1f
+    private var stationaryFrames: Int = 0
     private var lastTimestampNS: Long = 0
     private var velocityX: Float = 0f
     private var velocityY: Float = 0f
@@ -187,6 +188,7 @@ class TrackingService : Service(), SensorEventListener {
         slowAzimuthX = 0f
         slowAzimuthY = 1f
         baseAzimuthRad = null
+        stationaryFrames = 0
 
         /*
         startGpsLat = null
@@ -285,21 +287,27 @@ class TrackingService : Service(), SensorEventListener {
                 }
 
                 if (magnitude > noiseThresh && !isTurning) {
-                    val worldAx = magnitude * sin(effectiveAzimuth)
-                    val worldAy = magnitude * cos(effectiveAzimuth)
+                    // 將加速度視為前進的推動力 (扣除門檻，讓起步更滑順)
+                    val push = magnitude - noiseThresh
+                    val worldAx = push * sin(effectiveAzimuth)
+                    val worldAy = push * cos(effectiveAzimuth)
 
                     velocityX += worldAx * dt
                     velocityY += worldAy * dt
-
-                    // 只有在超過門檻（真正移動）時，才套用衰減，避免無限疊加
-                    velocityX *= decay
-                    velocityY *= decay
+                    stationaryFrames = 0
                 } else {
+                    stationaryFrames++
+                }
+
+                if (stationaryFrames > 15) {
                     // 【零速度更新 ZUPT (Zero Velocity Update)】
-                    // 如果加速度小於門檻，代表處於靜止狀態或等速滑行，
-                    // 行人通常沒有等速滑行，因此強制將速度歸零，瞬間斬斷漂移！
+                    // 連續約 300ms (15幀) 低於門檻，才判定為真正停下，斬斷漂移
                     velocityX = 0f
                     velocityY = 0f
+                } else {
+                    // 正常移動或步伐交替的短暫瞬間，只套用自然衰減
+                    velocityX *= decay
+                    velocityY *= decay
                 }
 
                 val dx = velocityX * dt * distScale
