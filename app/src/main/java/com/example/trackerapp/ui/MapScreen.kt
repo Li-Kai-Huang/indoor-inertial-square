@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.scale
 import com.example.trackerapp.TrackingConfig
 import com.example.trackerapp.db.TrackDatabase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
