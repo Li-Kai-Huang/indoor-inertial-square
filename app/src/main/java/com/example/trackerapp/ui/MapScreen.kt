@@ -153,8 +153,8 @@ fun MapScreen(
                     Slider(value = noise, onValueChange = { TrackingConfig.noiseThreshold.value = it }, valueRange = 0f..15f, modifier = Modifier.weight(2f))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(String.format("步長(m): %.2f", scale), modifier = Modifier.weight(1.2f), fontSize = 13.sp, color = Color.Gray)
-                    Slider(value = scale, onValueChange = { TrackingConfig.distanceScale.value = it }, valueRange = 0f..2f, modifier = Modifier.weight(2f))
+                    Text(String.format("步長比例: %.2f", scale), modifier = Modifier.weight(1.2f), fontSize = 13.sp, color = Color.Gray)
+                    Slider(value = scale, onValueChange = { TrackingConfig.distanceScale.value = it }, valueRange = 0f..20f, modifier = Modifier.weight(2f))
                 }
             }
         }

@@ -287,8 +287,8 @@ class TrackingService : Service(), SensorEventListener {
                 }
 
                 if (magnitude > noiseThresh && !isTurning) {
-                    // 將加速度視為前進的推動力 (扣除門檻，讓起步更滑順)
-                    val push = magnitude - noiseThresh
+                    // 將完整的加速度視為前進推動力，確保不遺失積分能量
+                    val push = magnitude
                     val worldAx = push * sin(effectiveAzimuth)
                     val worldAy = push * cos(effectiveAzimuth)
 
