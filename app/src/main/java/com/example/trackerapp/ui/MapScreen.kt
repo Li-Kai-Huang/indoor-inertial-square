@@ -82,17 +82,44 @@ fun MapScreen(
         if (angle < 0) angle += 360f
         closureErrorAngle = angle
 
+        // 尋找最佳閉合區間 (自動過濾掉開頭與結尾多走、或沒走完的軌跡，只抓真正的封閉範圍)
+        var bestStartIndex = 0
+        var bestEndIndex = sensorPoints.size - 1
+        
+        if (showArea && sensorPoints.size >= 10) {
+            var minDistSq = Float.MAX_VALUE
+            // 搜尋範圍：起點在軌跡前 30%，終點在後 30%
+            val searchLen = maxOf(sensorPoints.size / 3, 1)
+            for (i in 0 until searchLen) {
+                for (j in sensorPoints.size - searchLen until sensorPoints.size) {
+                    if (j - i > sensorPoints.size / 2) { // 確保有繞足夠大的一圈
+                        val p1 = sensorPoints[i]
+                        val p2 = sensorPoints[j]
+                        val distSq = (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y)
+                        if (distSq < minDistSq) {
+                            minDistSq = distSq
+                            bestStartIndex = i
+                            bestEndIndex = j
+                        }
+                    }
+                }
+            }
+        }
+
+        // 擷取真正有封閉的迴圈範圍
+        val loopPoints = sensorPoints.subList(bestStartIndex, bestEndIndex + 1)
+
         // 鞋帶公式 (Shoelace Formula) 計算多邊形面積
-        if (showArea && sensorPoints.size >= 3) {
+        if (showArea && loopPoints.size >= 3) {
             var sum = 0.0
-            for (i in 0 until sensorPoints.size - 1) {
-                val current = sensorPoints[i]
-                val next = sensorPoints[i+1]
+            for (i in 0 until loopPoints.size - 1) {
+                val current = loopPoints[i]
+                val next = loopPoints[i+1]
                 sum += (current.x.toDouble() * next.y.toDouble()) - (next.x.toDouble() * current.y.toDouble())
             }
             // 閉合最後一點與第一點
-            val first = sensorPoints.first()
-            val last = sensorPoints.last()
+            val first = loopPoints.first()
+            val last = loopPoints.last()
             sum += (last.x.toDouble() * first.y.toDouble()) - (first.x.toDouble() * last.y.toDouble())
             
             enclosedArea = Math.abs(sum) / 2.0
