@@ -14,6 +14,9 @@ interface TrackDao {
     @Insert
     suspend fun insertTrackPoint(point: TrackPointEntity): Long
 
+    @androidx.room.Update
+    suspend fun updateTrackPoints(points: List<TrackPointEntity>)
+
     @Query("SELECT * FROM tracks ORDER BY startTime DESC")
     fun getAllTracks(): Flow<List<TrackEntity>>
 

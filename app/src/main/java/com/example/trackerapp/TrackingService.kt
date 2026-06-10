@@ -65,6 +65,7 @@ class TrackingService : Service(), SensorEventListener {
         const val ACTION_START_TRACKING = "ACTION_START_TRACKING"
         const val ACTION_STOP_TRACKING = "ACTION_STOP_TRACKING"
         const val ACTION_RESET_TRACKING = "ACTION_RESET_TRACKING"
+        const val ACTION_FORCE_CLOSE = "ACTION_FORCE_CLOSE"
         private const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
         private const val NOTIFICATION_ID = 1
     }
@@ -116,6 +117,7 @@ class TrackingService : Service(), SensorEventListener {
             ACTION_START_TRACKING -> startTracking()
             ACTION_STOP_TRACKING -> stopTracking()
             ACTION_RESET_TRACKING -> resetTracking()
+            ACTION_FORCE_CLOSE -> forceCloseTrack()
         }
         return START_STICKY
     }
@@ -135,6 +137,27 @@ class TrackingService : Service(), SensorEventListener {
             val newTrack = TrackEntity(startTime = System.currentTimeMillis())
             currentTrackId = db.trackDao().insertTrack(newTrack)
             saveLocationToDatabase(currentX, currentY, "SENSOR")
+        }
+    }
+
+    private fun forceCloseTrack() {
+        if (currentTrackId == -1L) return
+        serviceScope.launch {
+            val db = TrackDatabase.getDatabase(this@TrackingService)
+            val points = db.trackDao().getPointsForTrackSync(currentTrackId)
+            if (points.size > 2) {
+                val finalPt = points.last()
+                val n = points.size
+                val updatedPoints = points.mapIndexed { index, pt ->
+                    val factor = index.toFloat() / (n - 1)
+                    val newX = pt.x - finalPt.x * factor
+                    val newY = pt.y - finalPt.y * factor
+                    pt.copy(x = newX, y = newY)
+                }
+                db.trackDao().updateTrackPoints(updatedPoints)
+                currentX = 0f
+                currentY = 0f
+            }
         }
     }
 
