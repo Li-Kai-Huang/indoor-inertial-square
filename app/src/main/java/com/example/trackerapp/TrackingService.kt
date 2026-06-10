@@ -53,6 +53,7 @@ class TrackingService : Service(), SensorEventListener {
     private var velocityY: Float = 0f
     private var currentX: Float = 0f
     private var currentY: Float = 0f
+    private var isPaused: Boolean = false
 
     /*
     // --- GPS 保留區 ---
@@ -67,6 +68,8 @@ class TrackingService : Service(), SensorEventListener {
         const val ACTION_STOP_TRACKING = "ACTION_STOP_TRACKING"
         const val ACTION_RESET_TRACKING = "ACTION_RESET_TRACKING"
         const val ACTION_FORCE_CLOSE = "ACTION_FORCE_CLOSE"
+        const val ACTION_PAUSE_TRACKING = "ACTION_PAUSE_TRACKING"
+        const val ACTION_RESUME_TRACKING = "ACTION_RESUME_TRACKING"
         private const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
         private const val NOTIFICATION_ID = 1
     }
@@ -119,6 +122,15 @@ class TrackingService : Service(), SensorEventListener {
             ACTION_STOP_TRACKING -> stopTracking()
             ACTION_RESET_TRACKING -> resetTracking()
             ACTION_FORCE_CLOSE -> forceCloseTrack()
+            ACTION_PAUSE_TRACKING -> {
+                isPaused = true
+                velocityX = 0f
+                velocityY = 0f
+            }
+            ACTION_RESUME_TRACKING -> {
+                isPaused = false
+                lastTimestampNS = 0
+            }
         }
         return START_STICKY
     }
@@ -189,6 +201,8 @@ class TrackingService : Service(), SensorEventListener {
         slowAzimuthY = 1f
         baseAzimuthRad = null
         stationaryFrames = 0
+        isPaused = false
+        isPaused = false
 
         /*
         startGpsLat = null
@@ -246,6 +260,7 @@ class TrackingService : Service(), SensorEventListener {
                 slowAzimuthY = slowAzimuthY * (1 - alpha) + cos(currentAzimuthRad) * alpha
             }
             Sensor.TYPE_LINEAR_ACCELERATION -> {
+                if (isPaused) return
                 if (lastTimestampNS == 0L) {
                     lastTimestampNS = event.timestamp
                     return

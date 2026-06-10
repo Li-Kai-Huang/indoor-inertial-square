@@ -36,6 +36,7 @@ fun MapScreen(
     onStopTracking: () -> Unit
 ) {
     var isTracking by remember { mutableStateOf(false) }
+    var isPaused by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val db = remember { TrackDatabase.getDatabase(context) }
     
@@ -263,21 +264,43 @@ fun MapScreen(
 
         // 操作按鈕區
         Column(modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = {
-                    if (isTracking) {
-                        isTracking = false
-                        onStopTracking()
-                    } else {
-                        isTracking = true
-                        onStartTracking()
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        if (isTracking) {
+                            isTracking = false
+                            isPaused = false
+                            onStopTracking()
+                        } else {
+                            isTracking = true
+                            isPaused = false
+                            onStartTracking()
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if(isTracking) Color(0xFFE53E3E) else Color(0xFF5A67D8)),
+                    modifier = Modifier.weight(1f).height(56.dp).padding(bottom = 8.dp)
+                ) {
+                    Text(if (isTracking) "停止紀錄" else "開始記錄", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+
+                if (isTracking) {
+                    Button(
+                        onClick = {
+                            isPaused = !isPaused
+                            val action = if (isPaused) com.example.trackerapp.TrackingService.ACTION_PAUSE_TRACKING else com.example.trackerapp.TrackingService.ACTION_RESUME_TRACKING
+                            val intent = android.content.Intent(context, com.example.trackerapp.TrackingService::class.java).apply {
+                                this.action = action
+                            }
+                            context.startService(intent)
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = if(isPaused) Color(0xFF48BB78) else Color(0xFFECC94B)),
+                        modifier = Modifier.weight(1f).height(56.dp).padding(bottom = 8.dp)
+                    ) {
+                        Text(if (isPaused) "繼續記錄" else "暫停紀錄", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if(isTracking) Color(0xFFE53E3E) else Color(0xFF5A67D8)),
-                modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 8.dp)
-            ) {
-                Text(if (isTracking) "停止紀錄" else "開始記錄", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             Row(
