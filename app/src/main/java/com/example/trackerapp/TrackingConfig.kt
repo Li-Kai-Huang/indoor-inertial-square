@@ -7,4 +7,5 @@ object TrackingConfig {
     val velocityDecay = MutableStateFlow(0.90f)
     val distanceScale = MutableStateFlow(1.00f)
     val turnStabilizer = MutableStateFlow(true) // Turn ZUPT toggle
+    val cardinalSnapping = MutableStateFlow(true) // Snap to 90 degree increments
 }

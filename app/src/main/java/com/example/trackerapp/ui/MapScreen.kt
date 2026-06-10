@@ -157,11 +157,17 @@ fun MapScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("參數校準", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Color(0xFF4A5568))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("轉彎穩定", fontSize = 13.sp, color = Color.Gray)
+                        Text("直角鎖定", fontSize = 12.sp, color = Color.Gray)
+                        Switch(
+                            checked = TrackingConfig.cardinalSnapping.collectAsState().value,
+                            onCheckedChange = { TrackingConfig.cardinalSnapping.value = it },
+                            modifier = Modifier.scale(0.6f)
+                        )
+                        Text("過濾轉彎", fontSize = 12.sp, color = Color.Gray)
                         Switch(
                             checked = TrackingConfig.turnStabilizer.collectAsState().value,
                             onCheckedChange = { TrackingConfig.turnStabilizer.value = it },
-                            modifier = Modifier.scale(0.7f).padding(horizontal = 4.dp)
+                            modifier = Modifier.scale(0.6f)
                         )
                         TextButton(onClick = { showCalibrationDialog = true }, contentPadding = PaddingValues(0.dp)) {
                             Text("距離校準", fontSize = 14.sp)

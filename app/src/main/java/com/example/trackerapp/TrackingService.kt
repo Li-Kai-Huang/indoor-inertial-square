@@ -43,6 +43,7 @@ class TrackingService : Service(), SensorEventListener {
     private var currentTrackId: Long = -1
 
     // PDR Variables (Sensor Double Integration)
+    private var baseAzimuthRad: Float? = null
     private var currentAzimuthRad: Float = 0f
     private var slowAzimuthX: Float = 0f
     private var slowAzimuthY: Float = 1f
@@ -127,6 +128,7 @@ class TrackingService : Service(), SensorEventListener {
         lastTimestampNS = 0
         slowAzimuthX = 0f
         slowAzimuthY = 1f
+        baseAzimuthRad = null
 
         serviceScope.launch {
             val db = TrackDatabase.getDatabase(this@TrackingService)
@@ -159,6 +161,9 @@ class TrackingService : Service(), SensorEventListener {
         velocityX = 0f
         velocityY = 0f
         lastTimestampNS = 0
+        slowAzimuthX = 0f
+        slowAzimuthY = 1f
+        baseAzimuthRad = null
 
         /*
         startGpsLat = null
@@ -243,9 +248,22 @@ class TrackingService : Service(), SensorEventListener {
                     isTurning = diff > 0.2f
                 }
 
+                // 矩形鎖定 (Cardinal Snapping)
+                if (baseAzimuthRad == null) {
+                    baseAzimuthRad = currentAzimuthRad
+                }
+                var effectiveAzimuth = currentAzimuthRad
+                if (TrackingConfig.cardinalSnapping.value) {
+                    var diff = effectiveAzimuth - baseAzimuthRad!!
+                    while (diff > Math.PI) diff -= (2 * Math.PI).toFloat()
+                    while (diff < -Math.PI) diff += (2 * Math.PI).toFloat()
+                    val snappedDiff = Math.round(diff / (Math.PI / 2)) * (Math.PI / 2).toFloat()
+                    effectiveAzimuth = baseAzimuthRad!! + snappedDiff
+                }
+
                 if (magnitude > noiseThresh && !isTurning) {
-                    val worldAx = magnitude * sin(currentAzimuthRad)
-                    val worldAy = magnitude * cos(currentAzimuthRad)
+                    val worldAx = magnitude * sin(effectiveAzimuth)
+                    val worldAy = magnitude * cos(effectiveAzimuth)
 
                     velocityX += worldAx * dt
                     velocityY += worldAy * dt
